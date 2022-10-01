@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+
+<head>
+  {% block head %}
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    
+    /* Create three equal columns that floats next to each other */
+    .column {
+      float: left;
+      width: 33.33%;
+      padding: 10px;
+      height: 300px; /* Should be removed. Only for demonstration */
+    }
+    
+    /* Clear floats after the columns */
+    .row:after {
+      content: "";
+      display: table;
+      clear: both;
+    }
+    </style> 
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
+    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <title>{% block title %}{% endblock %} - My Webpage</title>
+  {% endblock %}
+  <div id="list" class="btn-group" style="width:100%">
+    <button onclick="window.location.href='/add_pair'" style="width:20%">Add Pair</button>
+    <!-- <button onclick="window.location.href='/edit_pair'" style="width:20%">Edit Pair</button> -->
+    <button onclick="window.location.href='/get_pair'" style="width:20%">Get Pair</button>
+    <button onclick="window.location.href='/show_keys'" style="width:20%">Show Keys</button>
+    <button onclick="window.location.href='/show_cache'" style="width:20%">Show Cache</button>
+    <button onclick="window.location.href='/cache_config'" style="width:20%">Cache Config</button>
+    <button onclick="window.location.href='/statictics'" style="width:20%">Statistics</button>
+  </div>
+</head>
+
+<body >
+
+  <div id="content">{% block content %}{% endblock %}</div>
+  <div id="footer">
+    {% block footer %}
+    <div id="footer" style="
+    position: fixed;
+    bottom: 0;"> 
+      &copy; Copyright 2010 by <a href="http://domain.invalid/">you</a>.
+      <!-- <h1>Hello, World!</h1> -->
+    </div>
+    {% endblock %}
+  </div>
+
+
+
+
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+    integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"
+    integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js"
+    integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+    crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>

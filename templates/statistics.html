@@ -1,0 +1,50 @@
+{% extends 'layout.html' %}
+{% block title %} Add Pair {% endblock %}
+{% block head %}{{ super() }} {% endblock %}
+{% block content %}
+<div>
+    <h1 style="margin-left: 15px;">Memory Cache Statistics</h1>
+    <div style="margin-left: 30px; margin-right: 30px;">
+        <table class="table table-striped ">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">Requests</th>
+                    <th scope="col">Hit Rate</th>
+                    <th scope="col">Miss Rate</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th>{{ data['served_requests'] }}</th>
+                    <th>{{ data['hit_rate'] }}%</th>
+                    <th>{{ data['miss_rate'] }}%</th>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div style="margin-left: 30px; margin-right: 30px;">
+        <table class="table table-striped ">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Served Requests</th>
+                    <th scope="col">hit</th>
+                    <th scope="col">miss</th>
+                    <th scope="col">created_at</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in data.log %}
+                <tr>
+                    <th>{{loop.index}}</th>
+                    <th>{{record.requests}}</th>
+                    <th>{{record.hit}}</th>
+                    <th>{{record.miss}}</th>
+                    <th>{{record.created_at}}</th>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

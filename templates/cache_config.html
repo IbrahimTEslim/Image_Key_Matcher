@@ -1,0 +1,99 @@
+{% extends 'layout.html' %}
+{% block title %} Add Pair {% endblock %}
+{% block head %}{{ super() }} {% endblock %}
+{% block content %}
+<div>
+    <form action="/cache_config" method="post" enctype="multipart/form-data">
+        <div class="form-check">
+            <h3> Replacment Policy</h3>
+            {% for policy in data.policies %}
+            <div class="form-check" style="margin-left: 30px;">
+                <input id="{{loop.index}}" name="policy" class="form-check-input" type="radio" value={{policy.id}}
+                 {% if policy.id == data.current_policy_id %} checked {% endif %}>
+ 
+                <label class="form-check-label" for="{{loop.index}}">
+                    {{ policy.policy_name_view }}
+                </label>
+            </div>
+            {% endfor %}
+            <!-- <div class="form-check" style="margin-left: 30px;">
+                <input id="randomRadio" name="policy" class="form-check-input" type="radio" value="random" {% if data and data['policy'] == 'random' %} checked {% endif %}>
+                <label class="form-check-label" for="randomRadio">
+                    Random
+                </label>
+            </div>
+            <div class="form-check" style="margin-left: 30px;">
+                <input id="lruRadio" name="policy" class="form-check-input" type="radio" value="lru" {% if data and data['policy'] == 'lru' %} checked {% endif %}>
+                <label class="form-check-label" for="lruRadio">
+                    Least Recently Used (LRU)
+                </label>
+            </div> -->
+        </div>
+        <div>
+            <table style="margin-top: 50px; margin-left:30px">
+                <tr>
+                    <td><label style="font-size: 20px;">Max Capacity(MB): </label></td>
+                    <td> <input step="any" value="{{ data['capacity'] }}" type="number" name="capacity" class="form-control" style="margin-left:10px;"
+                            placeholder="capacity"> </td>
+                </tr>
+            </table>
+        </div>
+        <button style="margin-top:30px; margin-left:30px" type="submit" class="btn btn-primary">Submit</button>
+    </form>
+
+    <div style="margin-top: 50px; margin-bottom: 100px;">
+        <table style="margin-top: 50px; margin-left:30px">
+            <tr>
+                <form action="/put_key" method="post" enctype="multipart/form-data">
+                    <td><label style="font-size: 20px;">Put Key: </label></td>
+                    <td> <input name="key" class="form-control" style="margin-left:10px;" placeholder="key"> </td>
+                    <td>
+                        <button style="margin-left: 10px;" type="submit" class="btn btn-primary">Put</button>
+                        
+                    </td>
+                </form>
+            </tr>
+            <tr>
+                <form action="/invalidate_key" method="post" enctype="multipart/form-data">
+                    <td><label style="font-size: 20px;">Invalidate Key: </label></td>
+                    <td> <input name="key" class="form-control" style="margin-left:10px;" placeholder="key"> </td>
+                    <td>
+                        <button style="margin-left: 10px;" type="submit" class="btn btn-primary">Invalidate</button>
+                        
+                    </td>
+                </form>
+            </tr>
+            
+            <tr>
+                <td><label style="font-size: 20px;">Clear Memory Cache: </label></td>
+                <td>
+                    <form action="/clear_cache" method="get" enctype="multipart/form-data">
+                        <button style="margin-left: 10px;" name="clear_cache" value="true" type="submit"
+                            class="btn btn-primary">Clear Cache</button>
+                    </form>
+                </td>
+            </tr>
+
+        </table>
+    </div>
+
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    {% if category == 'error' %}
+    <div class="alert alert-danger" role="alert">
+        <h4>Error: {{ message }}</h4>
+    </div>
+    {% else %}
+    <div class="alert alert-success" role="alert">
+        <h4>Result: {{ message }}</h4>
+    </div>
+    {% endif %}
+    {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+</div>
+
+{% endblock %}

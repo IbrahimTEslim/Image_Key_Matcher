@@ -1,0 +1,26 @@
+{% extends 'layout.html' %}
+{% block title %} Add Pair {% endblock %}
+{% block head %}{{ super() }} {% endblock %}
+{% block content %}
+<div style="margin-left:20px; margin-top:15px; margin-bottom:15px; margin-right:20px;">
+    <h1>Keys List:</h1>
+    <div class="">
+        <table class="table table-striped ">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Key</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key in keys %}
+                <tr>
+                    <th>{{loop.index}}</th>
+                    <th>{{key['key']}}</th>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+    {% endblock %}

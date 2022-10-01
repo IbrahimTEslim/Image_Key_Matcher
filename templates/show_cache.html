@@ -1,0 +1,30 @@
+{% extends 'layout.html' %}
+{% block title %} Add Pair {% endblock %}
+{% block head %}{{ super() }} {% endblock %}
+{% block content %}
+<div style="margin-left:20px; margin-top:15px; margin-bottom:15px; margin-right:20px;">
+    <h1>Cache Content List:</h1>
+    <div class="">
+        <table class="table table-striped ">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Key</th>
+                    <th scope="col">Path</th>
+                    <th scope="col">Size</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in cache %}
+                <tr>
+                    <th>{{loop.index}}</th>
+                    <th>{{record[0]}}</th>
+                    <th>{{record[1][0]}}</th>
+                    <th>{{record[1][1]}} (MB)s</th>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+    {% endblock %}

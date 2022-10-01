@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% block title %}Index{% endblock %}
+{% block head %}
+  {{ super() }}
+  <style type="text/css">
+    .important { color: red; }
+  </style>
+{% endblock %}
+{% block content %}
+{% if name %}
+  <h1 class="important" >Hello {{ name }}!</h1>
+{% else %}
+  <h1 class="important" >Hello, World!</h1>
+
+{% endif %}
+{% endblock %}

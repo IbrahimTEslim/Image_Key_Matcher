@@ -1,0 +1,47 @@
+{% extends 'layout.html' %}
+{% block title %} Add Pair {% endblock %}
+{% block head %}{{ super() }} {% endblock %}
+{% block content %}
+<div style="margin-left:20px; margin-top:15px; margin-bottom:15px;">
+    <h1>Get Pair</h1>
+    <form action="/get_pair" method="post" enctype="multipart/form-data">
+        <table style="margin-top: 50px; margin-left:30px">
+            <tr>
+                <td><label style="font-size: 20px;">Key: </label></td>
+                <td> <input name="key" class="form-control" style="margin-left:10px;" placeholder="key"> </td>
+            </tr>
+            
+            <tr>
+                <td>
+                    <button style="margin-top:30px;" type="submit" class="btn btn-primary">Submit</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+    <img src="{{ user_image }}" alt="User Image">
+    <div style="margin-top: 30px;">
+        <!-- {% for msg in get_flashed_messages() %}
+        <div class="alert alert-danger" role="alert">
+            msg
+        </div>
+        {% endfor %} -->
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        {% if category == 'error' %}
+        <div class="alert alert-danger" role="alert">
+            <h4>Error: {{ message }}</h4>
+        </div>
+        {% else %}
+        <div class="alert alert-success" role="alert">
+            <h4>Result: {{ message }}</h4>
+        </div>
+        {% endif %}
+        {% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
+    </div>
+</div>
+{% endblock %}
