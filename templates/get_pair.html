@@ -18,7 +18,7 @@
             </tr>
         </table>
     </form>
-    <img src="{{ user_image }}" alt="User Image">
+    <img src="data:image/png;base64, {{ user_image }}" alt="User Image">
     <div style="margin-top: 30px;">
         <!-- {% for msg in get_flashed_messages() %}
         <div class="alert alert-danger" role="alert">

@@ -1,8 +1,6 @@
-from crypt import methods
-import os
+import os, base64
 from flask import Flask, render_template, redirect, flash, request, send_from_directory
-from lib import  allowed_file, calc_statistics, get_cache_config, get_capacity, get_hit, get_last_10_min_stat, get_miss, get_path, get_policies, get_replace_policy, get_served_requests, get_size, increment_hit_or_miss, increment_served_request, insert_pair, get_keys, key_exist, save_mem_config, update_pair, update_pair
-from werkzeug.utils import secure_filename
+from lib import  allowed_file, calc_statistics, get_cache_config, get_capacity, get_last_10_min_stat, get_miss, get_path, get_policies, get_replace_policy, get_served_requests, get_size, increment_hit_or_miss, increment_served_request, insert_pair, get_keys, key_exist, save_mem_config, update_pair, update_pair
 
 from mem_cache import Cache
 
@@ -27,10 +25,10 @@ def add_pair_get(): return render_template('add_pair.html')
 
 @app.route("/add_pair", methods=['POST'])
 def add_pair_post():
-    print('request.method', request.method)
-    print('request.args', request.args)
-    print('request.form', request.form)
-    print('request.files', request.files)
+    # print('request.method', request.method)
+    # print('request.args', request.args)
+    # print('request.form', request.form)
+    # print('request.files', request.files)
 
 
     if 'image' not in request.files:
@@ -44,8 +42,8 @@ def add_pair_post():
 
     file = request.files['image']
     key = request.form['key']
-
-    if file.filename == '':
+    # print("Type:::: ", type)
+    if file is None or file.filename == '':
         flash('No File Selected', 'error')
         return redirect(request.url)
 
@@ -69,8 +67,17 @@ def add_pair_post():
         else: 
             if insert_pair(key,file_path, size): flash(f'\nThe Key: {key} {msg} Successfully','msg')
             else: flash('Could not Save','error')
+        
+        cache.invalidate_key(key)
+        
+        f = open(file_path, 'rb', buffering=0)
+        
+        saved = cache.put(key,file_path,size,base64.b64encode(f.read()).decode('ascii'))
+        
+        if not saved: flash('Image Size > Cache Cpacity, Can not Save', 'error')
 
-        cache.put(key,file_path,size)        
+        f.close
+        
         return redirect(request.url)
     else:
         flash('File Type Not Supported.', 'error')
@@ -82,7 +89,7 @@ def show_keys_get(): return render_template('show_keys.html',keys=get_keys())
 
 @app.route("/show_cache", methods=['GET'])
 def show_cache_get(): 
-    print("Cache List: ",cache.get_cache())
+    # print("Cache List: ",cache.get_cache())
     return render_template('show_cache.html',cache=cache.get_cache())
 
 # @app.route("/edit_pair", methods=['GET'])
@@ -128,10 +135,10 @@ def get_pair_get(): return render_template('get_pair.html')
 
 @app.route("/get_pair", methods=['POST'])
 def get_pair_post():
-    print('request.method', request.method)
-    print('request.args', request.args)
-    print('request.form', request.form)
-    print('request.files', request.files)
+    # print('request.method', request.method)
+    # print('request.args', request.args)
+    # print('request.form', request.form)
+    # print('request.files', request.files)
 
 
     if 'key' not in request.form:
@@ -149,18 +156,24 @@ def get_pair_post():
         flash('Unused Key','error')
         return redirect(request.url)
 
-    if cache.exists(key): return render_template('get_pair.html',user_image = cache.get(key))
+    if cache.exists(key):
+        print("Fetched from Cache.....................")
+        return render_template('get_pair.html',user_image = cache.get(key)[1])
         
     else:
-        cache.put(key, miss=True)
-    # full_filename = os.path.join(app.config['UPLOAD_FOLDER'], 'test6547.jpg')
-        return render_template('get_pair.html',user_image = get_path(key))
+        saved = cache.put(key, miss=True)
+        if not saved: flash('Image Size > Cache Cpacity, Can not Save', 'error')
+
+        f = open(get_path(key),'rb',buffering=0)
+        data = base64.b64encode(f.read()).decode('ascii')
+        f.close()
+        return render_template('get_pair.html',user_image = data)
     #return send_from_directory(app.config['UPLOAD_FOLDER'],path.split('/')[-1],as_attachment=True)
 
 
 @app.route("/cache_config", methods=['GET'])
 def cache_config_get():
-    print("Policies: ", get_policies())
+    # print("Policies: ", get_policies())
     data = get_cache_config()
     return render_template('cache_config.html', data = data)
 
@@ -185,14 +198,14 @@ def cache_config_post():
 
     data['capacity'] = capacity
     data['current_policy_id'] = int(policy)
-    print("Data: ",data)
+    # print("Data: ",data)
     return render_template('cache_config.html', data = data)
 
 @app.route("/statictics", methods=['GET'])
 def statistics_get():
     data = {}
     log = get_last_10_min_stat()
-    calculated_stat = calc_statistics(get_last_10_min_stat()) # tuple(requests,hit, miss)
+    calculated_stat = calc_statistics(get_last_10_min_stat()) # tuple(requests, hit, miss)
     requests = calculated_stat[0]
     data['served_requests'] = requests
     data['hit_rate'] = float(calculated_stat[1] / requests * 100) if requests > 0 else 0
@@ -244,18 +257,29 @@ def insert_into_cache():
         flash('No Key Added', 'error')
         return render_template('cache_config.html', data = data)
     
+    if not key_exist(key):
+        flash('Not Used Key', 'error')
+        return render_template('cache_config.html', data = data)
+    
     path = get_path(key)
     size = float(get_size(key))
 
-    cache.put(key,path,size)
-
-    flash("Element Inserted Into Memory Cache Successfully",'msg')
+    cache.invalidate_key(key)
+    
+    saved = cache.put(key,path,size)
+    
+    if not saved:
+        flash('Image Size > Cache Cpacity, Can not Save', 'error')
+        return render_template('cache_config.html', data = data)
+    
+    flash('Element Inserted Into Memory Cache Successfully', 'msg')
     return render_template('cache_config.html', data = data)
 
 
 
 
-
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port='8888', debug=True)
 
 
 
