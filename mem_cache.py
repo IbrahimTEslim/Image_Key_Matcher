@@ -47,7 +47,7 @@ class Cache():
         self.__capacity = get_capacity()
         self.__reformat_cache()
     
-    def get(self, key: str) -> str:
+    def get(self, key: str) -> tuple:
         self.served_requests += 1
         if key in self.__cache:
             self.__cache.move_to_end(key)

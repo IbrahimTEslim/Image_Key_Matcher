@@ -51,7 +51,7 @@ def update_pair(key: str, path: str, size: float) -> bool:
     # print("path", path)
     try:
         conn = get_db_connection()
-        conn.cursor().execute('update pairs set path = ?, size = ? where key = ?',(path,key,size))
+        conn.cursor().execute("update pairs set path = ?, size = ? where key = ?",(path,size,key))
         # print("--------------degub LIB Lineee----------------")
 
         conn.commit()
@@ -63,7 +63,7 @@ def get_path(key: str) -> str:
     conn = get_db_connection()
     path = conn.execute('select path from pairs where key = ?',(key,)).fetchall()
     conn.close()
-    print("Path:: ",path)
+    # print("Path:: ",path)
     return path[0]['path']
 
 def get_capacity() -> float:

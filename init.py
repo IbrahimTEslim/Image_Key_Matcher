@@ -13,7 +13,7 @@ cur.execute("INSERT INTO policies (policy_name, description, policy_name_view, c
 cur.execute("INSERT INTO policies (policy_name, description, policy_name_view, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
     ('lru','remove lru element','Least recently Used (LRU)'))
 
-cur.execute("INSERT INTO mem_cache (replace_policy, capacity, created_at) VALUES (?,?, CURRENT_TIMESTAMP)",('1','1'))
+cur.execute("INSERT INTO mem_cache (replace_policy, capacity, created_at) VALUES (?,?, CURRENT_TIMESTAMP)",('1','10'))
 
 connection.commit()
 connection.close()
