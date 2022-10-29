@@ -2,10 +2,12 @@ from collections import OrderedDict
 from datetime import datetime
 from lib import get_capacity, get_path, get_replace_policy, get_size, insert_stat, set_hit_or_miss_value, set_mem_size, set_num_of_items, set_served_request_value
 import random,threading,base64
+from Custom_DS import ListDict
 
 class Cache():
     def __init__(self) -> None:
         self.__cache = OrderedDict()
+        self.__list_dict = ListDict() # to apply random remove in O(1)
         self.__size = 0.0 # In MB unit
         self.__count = 0 
         self.hit = 0 
@@ -35,10 +37,12 @@ class Cache():
         self.__size += size
         self.__count += 1
         self.__cache.move_to_end(key)
+        self.__list_dict.add_key(key)
         return True
 
     def clear(self):
         self.__cache = OrderedDict()
+        self.__list_dict.clear()
         self.__size = 0.0
         self.__count = 0
         
@@ -62,22 +66,25 @@ class Cache():
             self.__size -= float(self.__cache[key][1])
             self.__cache.pop(key)
             self.__count -= 1
+            self.__list_dict.remove_key(key)
     
     def exists(self, key: str) -> bool:
         return True if key in self.__cache else False
 
     def __remove_random(self):
-        rand_key = random.choice(list(self.__cache.keys()))
+        rand_key = self.__list_dict.choose_random_key() # O(1)
         self.__count -= 1
         self.__size -= float(self.__cache[rand_key][1])
         self.__cache.pop(rand_key)
+        self.__list_dict.remove_key(rand_key)
 
     def __remove_lru(self):
-        lru_key = list(self.__cache.items())[0][0]
-        print("LRU Key: ",lru_key)
+        lru_key = self.__cache.popitem(last = False)
+        print("LRU Key: ",lru_key[0])
         self.__count -= 1
-        self.__size -= float(self.__cache[lru_key][1])
-        self.__cache.popitem(last = False)
+        self.__size -= float(lru_key[1][1])
+        self.__list_dict.remove_key(lru_key[0])
+        # self.__cache.popitem(last = False)
     
     def __remove_record(self):
         if self.__replacement_policy == 'random': self.__remove_random()

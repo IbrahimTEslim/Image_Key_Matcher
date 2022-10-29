@@ -1,5 +1,5 @@
 import os, base64
-from flask import Flask, render_template, redirect, flash, request, send_from_directory
+from flask import Flask, render_template, redirect, flash, request
 from lib import  allowed_file, calc_statistics, get_cache_config, get_capacity, get_last_10_min_stat, get_miss, get_path, get_policies, get_replace_policy, get_served_requests, get_size, increment_hit_or_miss, increment_served_request, insert_pair, get_keys, key_exist, save_mem_config, update_pair, update_pair
 
 from mem_cache import Cache
