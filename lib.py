@@ -1,6 +1,5 @@
-from calendar import c
-import sqlite3
-from time import time
+import psycopg2
+import psycopg2.extras
 
 def make_dicts(cursor, row):
     return dict((cursor.description[idx][0], value)
@@ -11,20 +10,29 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def get_db_connection():
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = make_dicts
-    return conn
+def get_db_connection_and_cursor():
+    conn = psycopg2.connect(
+        host="localhost",
+        database="ImageKey",
+        user="postgres",
+        password="sa",
+        port=5432
+    )
+    # conn.row_factory = make_dicts
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    return conn, cursor
 
 def get_keys():
-    conn = get_db_connection()
-    keys = conn.execute('select key from pairs').fetchall()
+    conn, cur = get_db_connection_and_cursor()
+    cur.execute('select key from pairs')
+    keys = cur.fetchall()
     conn.close()
     return keys
 
 def key_exist(key: str) -> bool:
-        conn = get_db_connection()
-        res = conn.execute('select * from pairs where key = ?',(key,)).fetchall()
+        conn, cur = get_db_connection_and_cursor()
+        cur.execute('select * from pairs where key = %s',(key,))
+        res = cur.fetchall()
         # print("--------------degub LIB Lineee----------------")
         conn.close()
         # print("Result: ", res)
@@ -35,8 +43,8 @@ def insert_pair(key: str, path: str, size: float) -> bool:
     # print("Key: ",key)
     # print("path", path)
     try:
-        conn = get_db_connection()
-        conn.cursor().execute('insert into pairs (key, path, size, created_at) values (? , ?, ?, CURRENT_TIMESTAMP)',(key,path, size))
+        conn, cur = get_db_connection_and_cursor()
+        cur.execute('insert into pairs (key, path, size, created_at) values (%s , %s, %s, CURRENT_TIMESTAMP)',(key,path, size))
         # print("--------------degub LIB Lineee----------------")
 
         conn.commit()
@@ -50,8 +58,8 @@ def update_pair(key: str, path: str, size: float) -> bool:
     # print("Key: ",key)
     # print("path", path)
     try:
-        conn = get_db_connection()
-        conn.cursor().execute("update pairs set path = ?, size = ? where key = ?",(path,size,key))
+        conn, cur = get_db_connection_and_cursor()
+        cur.execute("update pairs set path = %s, size = %s where key = %s",(path,size,key))
         # print("--------------degub LIB Lineee----------------")
 
         conn.commit()
@@ -60,42 +68,50 @@ def update_pair(key: str, path: str, size: float) -> bool:
     except: return False
 
 def get_path(key: str) -> str:
-    conn = get_db_connection()
-    path = conn.execute('select path from pairs where key = ?',(key,)).fetchall()
+    conn, cur = get_db_connection_and_cursor()
+    cur.execute('select path from pairs where key = %s',(key,))
+    path = cur.fetchall()
     conn.close()
     # print("Path:: ",path)
     return path[0]['path']
 
 def get_capacity() -> float:
-    conn = get_db_connection()
-    capacity = conn.execute('select capacity from mem_cache').fetchall()
+    conn, cur = get_db_connection_and_cursor()
+    # cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+    cur.execute('select capacity from mem_cache')
+    capacity = cur.fetchall()
+    # print("Capacity:: ", capacity)
+    # print("Capacity:: ", capacity[0]['capacity'])
     conn.close()
     return capacity[0]['capacity']
 
 def save_mem_config(policy_id: int, capacity: float) -> bool:
     try:
-        conn = get_db_connection()
-        conn.cursor().execute('update mem_cache set replace_policy = ?, capacity = ? where id = ?',(policy_id,capacity,1))
+        conn, cur = get_db_connection_and_cursor()
+        cur.execute('update mem_cache set replace_policy = %s, capacity = %s where id = %s',(policy_id,capacity,1))
         conn.commit()
         conn.close()
         return True
     except: return False
 
 def get_served_requests() -> int:
-    conn = get_db_connection()
-    served_requests = conn.execute('select requests from mem_cache').fetchall()
+    conn, cur = get_db_connection_and_cursor()
+    cur.execute('select requests from mem_cache')
+    served_requests = cur.fetchall()
     conn.close()
     return 0 if served_requests[0]['requests'] is None else int(served_requests[0]['requests'])
 
 def get_hit() -> int:
-    conn = get_db_connection()
-    served_requests = conn.execute('select hit from mem_cache').fetchall()
+    conn, cur = get_db_connection_and_cursor()
+    cur.execute('select hit from mem_cache')
+    served_requests = cur.fetchall()
     conn.close()
     return 0 if served_requests[0]['hit'] is None else int(served_requests[0]['hit'])
 
 def get_miss() -> int:
-    conn = get_db_connection()
-    served_requests = conn.execute('select miss from mem_cache').fetchall()
+    conn, cur = get_db_connection_and_cursor()
+    cur.execute('select miss from mem_cache')
+    served_requests = cur.fetchall()
     conn.close()
     return 0 if served_requests[0]['miss'] is None else int(served_requests[0]['miss'])
 
@@ -103,22 +119,28 @@ def get_replace_policy() -> str:
     return get_replace_policy_by_id(get_replace_policy_id())
 
 def get_replace_policy_id() -> int:
-    conn = get_db_connection()
-    replace_ploicy = conn.execute('select replace_policy from mem_cache').fetchall()
+    conn, cur = get_db_connection_and_cursor()
+    # cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+    cur.execute('select replace_policy from mem_cache')
+    replace_policy = cur.fetchall()
+    print("How Postgres Lig Return Data: ", replace_policy)
     conn.close()
-    return replace_ploicy[0]['replace_policy']
+    return replace_policy[0]['replace_policy']
 
 def get_replace_policy_by_id(id: int) -> str:
     id = get_replace_policy_id()
-    conn = get_db_connection()
-    policy = conn.execute('select policy_name from policies where id = ?',(id,)).fetchall()
+    conn, cur = get_db_connection_and_cursor()
+    # cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+    cur.execute('select policy_name from policies where id = %s',(id,))
+    policy = cur.fetchall()
     conn.close()
     return policy[0]['policy_name']
 
 def get_size(key: str) -> float:
     # print("\n\n\n",key,"\n\n\n")
-    conn = get_db_connection()
-    size = conn.execute("select size from pairs where key = ?",(key,)).fetchall()
+    conn, cur = get_db_connection_and_cursor()
+    cur.execute("select size from pairs where key = %s",(key,))
+    size = cur.fetchall()
     conn.close()
     return float(size[0]['size'])
 
@@ -126,9 +148,9 @@ def increment_hit_or_miss(hit: bool) -> bool:
     try:
         field = 'hit' if hit else 'miss'
         old_val = get_hit() if hit else get_miss()
-        query = f"update mem_cache set {field} = ? where id = ?"
-        conn = get_db_connection()
-        conn.cursor().execute(query,(old_val + 1, 1))
+        query = f"update mem_cache set {field} = %s where id = %s"
+        conn, cur = get_db_connection_and_cursor()
+        cur.execute(query,(old_val + 1, 1))
         conn.commit()
         conn.close()
         return True
@@ -137,8 +159,8 @@ def increment_hit_or_miss(hit: bool) -> bool:
 def increment_served_request() -> bool:
     try:
         old_val = get_served_requests()
-        conn = get_db_connection()
-        conn.cursor().execute("update mem_cache set requests = ? where id = ?",(old_val + 1, 1))
+        conn, cur = get_db_connection_and_cursor()
+        cur.execute("update mem_cache set requests = %s where id = %s",(old_val + 1, 1))
         conn.commit()
         conn.close()
         return True
@@ -147,9 +169,9 @@ def increment_served_request() -> bool:
 def set_hit_or_miss_value(hit: bool, val: int) -> bool:
     try:
         field = 'hit' if hit else 'miss'
-        query = f"update mem_cache set {field} = ? where id = ?"
-        conn = get_db_connection()
-        conn.cursor().execute(query,(val, 1,))
+        query = f"update mem_cache set {field} = %s where id = %s"
+        conn, cur = get_db_connection_and_cursor()
+        cur.execute(query,(val, 1,))
         conn.commit()
         conn.close()
         return True
@@ -157,8 +179,8 @@ def set_hit_or_miss_value(hit: bool, val: int) -> bool:
 
 def set_served_request_value(val: int) -> bool:
     try:
-        conn = get_db_connection()
-        conn.cursor().execute("update mem_cache set requests = ? where id = ?",(val, 1))
+        conn, cur = get_db_connection_and_cursor()
+        cur.execute("update mem_cache set requests = %s where id = %s",(val, 1))
         conn.commit()
         conn.close()
         return True
@@ -166,8 +188,8 @@ def set_served_request_value(val: int) -> bool:
 
 def set_num_of_items(val: int) -> bool:
     try:
-        conn = get_db_connection()
-        conn.cursor().execute("update mem_cache set num_of_items = ? where id = ?",(val, 1))
+        conn, cur = get_db_connection_and_cursor()
+        cur.execute("update mem_cache set num_of_items = %s where id = %s",(val, 1))
         conn.commit()
         conn.close()
         return True
@@ -175,8 +197,8 @@ def set_num_of_items(val: int) -> bool:
 
 def set_mem_size(val: float) -> bool:
     try:
-        conn = get_db_connection()
-        conn.cursor().execute("update mem_cache set mem_size = ? where id = ?",(val, 1))
+        conn, cur = get_db_connection_and_cursor()
+        cur.execute("update mem_cache set mem_size = %s where id = %s",(val, 1))
         conn.commit()
         conn.close()
         return True
@@ -184,16 +206,17 @@ def set_mem_size(val: float) -> bool:
 
 def insert_stat(served_req: int, hit: int, miss: int) -> bool:
     try:
-        conn = get_db_connection()
-        conn.cursor().execute("insert into statistics (requests, hit, miss, created_at) values (?, ?, ?, CURRENT_TIMESTAMP)", (served_req, hit, miss))
+        conn, cur = get_db_connection_and_cursor()
+        cur.execute("insert into statistics (requests, hit, miss, created_at) values (%s, %s, %s, CURRENT_TIMESTAMP)", (served_req, hit, miss))
         conn.commit()
         conn.close
         return True
     except: return False
 
 def get_policies() -> list:
-    conn = get_db_connection()
-    policies = conn.execute('select id, policy_name, policy_name_view from policies order by id').fetchall()
+    conn, cur = get_db_connection_and_cursor()
+    cur.execute('select id, policy_name, policy_name_view from policies order by id')
+    policies = cur.fetchall()
     conn.close()
     return list(policies)
 
@@ -201,8 +224,9 @@ def get_cache_config() -> dict:
     return {'capacity' : get_capacity(), 'current_policy_id' : get_replace_policy_id(), 'policies' : get_policies()}
 
 def get_last_10_min_stat():
-    conn = get_db_connection()
-    stat = conn.execute("select * from statistics where created_at >= Datetime('now', '-10 minutes') and (requests > 0 and hit > 0 or miss > 0)").fetchall()
+    conn, cur = get_db_connection_and_cursor()
+    cur.execute("select * from statistics where created_at >= (CURRENT_TIMESTAMP - (10 * interval '1 minute')) and (requests > 0 and hit > 0 or miss > 0)")
+    stat = cur.fetchall()
     conn.close()
     return stat
 

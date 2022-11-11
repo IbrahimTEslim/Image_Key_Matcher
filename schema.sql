@@ -4,7 +4,7 @@ DROP TABLE IF EXISTS statistics;
 DROP TABLE IF EXISTS policies;
 
 CREATE TABLE pairs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id serial PRIMARY KEY,
     key TEXT UNIQUE NOT NULL,
     path TEXT NOT NULL,
     size FLOAT NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE pairs (
 );
 
 CREATE TABLE policies (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id serial PRIMARY KEY,
     policy_name TEXT UNIQUE NOT NULL,
     description TEXT,
     policy_name_view TEXT,
@@ -21,7 +21,7 @@ CREATE TABLE policies (
 );
 
 CREATE TABLE mem_cache (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id serial PRIMARY KEY,
     replace_policy INTEGER,
     capacity FLOAT,
     mem_size FLOAT,
@@ -33,7 +33,7 @@ CREATE TABLE mem_cache (
 );
 
 CREATE TABLE statistics (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id serial PRIMARY KEY,
     requests INTEGER,
     hit FLOAT,
     miss FLOAT,
