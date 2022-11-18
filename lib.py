@@ -1,5 +1,6 @@
 import psycopg2
 import psycopg2.extras
+from decouple import config
 
 def make_dicts(cursor, row):
     return dict((cursor.description[idx][0], value)
@@ -12,12 +13,13 @@ def allowed_file(filename):
 
 def get_db_connection_and_cursor():
     conn = psycopg2.connect(
-        host="localhost",
-        database="ImageKey",
-        user="postgres",
-        password="sa",
-        port=5432
+        host=config("Endpoint"),
+        database=config("Database"),
+        user='postgres',
+        password=config("Password"),
+        port=config("Port"),
     )
+
     # conn.row_factory = make_dicts
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     return conn, cursor

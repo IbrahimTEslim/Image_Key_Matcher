@@ -1,9 +1,9 @@
 from collections import OrderedDict
 from datetime import datetime
 from lib import get_capacity, get_path, get_replace_policy, get_size, insert_stat, set_hit_or_miss_value, set_mem_size, set_num_of_items, set_served_request_value
-import random,threading,base64
+import threading,base64, tempfile
 from Custom_DS import ListDict
-
+from s3 import S3
 class Cache():
     def __init__(self) -> None:
         self.__cache = OrderedDict()
@@ -15,14 +15,18 @@ class Cache():
         self.served_requests = 0 
         self.__replacement_policy = get_replace_policy()
         self.__capacity = get_capacity() # In MB unit
+        self.__s3 = S3()
         threading.Timer(5,self.store_statistics).start()
     
     def put(self, key: str, path = None, size = None, miss = False, image = None) -> bool:
         if not path: path = get_path(key)
         if not size: size = float(get_size(key))
         if not image:
-            with open(path,'rb', buffering=0) as f:
-                image = base64.b64encode(f.read()).decode('ascii')
+            tf = tempfile.TemporaryFile()
+            self.__s3.download(key,tf)
+            tf.seek(0)
+            image = base64.b64encode(tf.read()).decode('ascii')
+            tf.close()
                 
         if miss:
             self.served_requests += 1

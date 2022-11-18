@@ -1,11 +1,12 @@
 import os, psycopg2
+from decouple import config
 
 connection = psycopg2.connect(
-        host="localhost",
-        database="ImageKey",
-        user="postgres",
-        password="sa",
-        port=5432
+        host=config("Endpoint"),
+        database=config("Database"),
+        user='postgres',
+        password=config("Password"),
+        port=config("Port"),
     )
 
 with open('schema.sql') as f:

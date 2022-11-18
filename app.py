@@ -1,7 +1,7 @@
-import os, base64
+import os, base64, tempfile
 from flask import Flask, render_template, redirect, flash, request
 from lib import  allowed_file, calc_statistics, get_cache_config, get_capacity, get_last_10_min_stat, get_miss, get_path, get_policies, get_replace_policy, get_served_requests, get_size, increment_hit_or_miss, increment_served_request, insert_pair, get_keys, key_exist, save_mem_config, update_pair, update_pair
-
+from s3 import S3
 from mem_cache import Cache
 
 app = Flask(__name__)
@@ -14,7 +14,7 @@ app.config.update(SECRET_KEY=os.urandom(24))
 
 
 cache = Cache()
-
+s3 = S3()
 
 @app.route("/")
 def index():
@@ -56,27 +56,35 @@ def add_pair_post():
     if exist: msg = "Updated"
     else: msg = "Created"
 
+    # msg = "Updated" if exist else "Created"
+
     if file and allowed_file(file.filename):
-        #filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], key)
-        file.save(file_path)
-        size = (os.stat(file_path).st_size / 1000000)
-        if exist:
+        file_path = 's3:\\' + key
+        file.seek(0, os.SEEK_END)
+        size = (file.tell() / 1000000)
+        file.seek(0)
+        file_data = file.read() # i read it here cause i don't know why it closed after the s3.upload()
+        file.seek(0)
+        uploaded_to_s3 = s3.upload(file, key)
+        
+        if not uploaded_to_s3: flash('Could not Save','error')
+
+        if exist and uploaded_to_s3:
             if update_pair(key,file_path,size): flash('Updated Successfully','msg')
             else: flash('Could not Update','error')
-        else: 
+        elif not exist and uploaded_to_s3: 
             if insert_pair(key,file_path, size): flash(f'\nThe Key: {key} {msg} Successfully','msg')
-            else: flash('Could not Save','error')
+            else: flash('Could not Create Pair','error')
+        else: flash('Could not Save to S3','error')
         
         cache.invalidate_key(key)
         
-        f = open(file_path, 'rb', buffering=0)
-        
-        saved = cache.put(key,file_path,size,base64.b64encode(f.read()).decode('ascii'))
-        
+        saved = cache.put(key,file_path,size,base64.b64encode(file_data).decode('ascii'))
         if not saved: flash('Image Size > Cache Cpacity, Can not Save', 'error')
 
-        f.close
+        file.close()
+        
+        del file_data # remove file data from memory right now
         
         return redirect(request.url)
     else:
@@ -92,54 +100,11 @@ def show_cache_get():
     # print("Cache List: ",cache.get_cache())
     return render_template('show_cache.html',cache=cache.get_cache())
 
-# @app.route("/edit_pair", methods=['GET'])
-# def edit_pair_get(): return render_template('edit_pair.html')
-
-# @app.route("/edit_pair", methods=['POST'])
-# def edit_pair_post():
-#     if 'image' not in request.files:
-#         flash('No File Sumitted','error')
-#         return redirect(request.url)
-
-#     if 'key' not in request.form:
-#         flash('No Key Added','error')
-#         return redirect(request.url)
-#     # print("--------------degub Lineee----------------")
-
-#     file = request.files['image']
-#     key = request.form['key']
-
-#     if file.filename == '':
-#         flash('No File Selected', 'error')
-#         return redirect(request.url)
-
-#     if key == '':
-#         flash('No Key Added', 'error')
-#         return redirect(request.url)
-
-#     if not key_exist(key):
-#         flash('Unused Key','error')
-#         return redirect(request.url)
-
-#     if file and allowed_file(file.filename):
-#             # filename = secure_filename(file.filename)
-#             file_path = os.path.join(app.config['UPLOAD_FOLDER'], key)
-#             if update_pair(key,file_path):
-#                 file.save(file_path)
-#                 flash('Updated Successfully','msg')
-#             else: flash('Could not Update','error')
-#     return redirect(request.url)
-
 @app.route("/get_pair", methods=['GET'])
 def get_pair_get(): return render_template('get_pair.html') 
 
 @app.route("/get_pair", methods=['POST'])
 def get_pair_post():
-    # print('request.method', request.method)
-    # print('request.args', request.args)
-    # print('request.form', request.form)
-    # print('request.files', request.files)
-
 
     if 'key' not in request.form:
         flash('No Key Added','error')
@@ -157,18 +122,27 @@ def get_pair_post():
         return redirect(request.url)
 
     if cache.exists(key):
-        print("Fetched from Cache.....................")
+        flash('Fetched From Memory Cache','msg')
         return render_template('get_pair.html',user_image = cache.get(key)[1])
         
     else:
         saved = cache.put(key, miss=True)
-        if not saved: flash('Image Size > Cache Cpacity, Can not Save', 'error')
+        if not saved:
+            flash('Image Size > Cache Cpacity, Can not Save', 'error')
 
-        f = open(get_path(key),'rb',buffering=0)
-        data = base64.b64encode(f.read()).decode('ascii')
-        f.close()
-        return render_template('get_pair.html',user_image = data)
-    #return send_from_directory(app.config['UPLOAD_FOLDER'],path.split('/')[-1],as_attachment=True)
+            fp = tempfile.TemporaryFile()
+
+            if not s3.download(key,fp): flash('Can not fetch image from S3 resource', 'error')
+            else: flash('Image Fetched From S3 Successfully', 'msg')
+            
+            fp.seek(0)
+            data = base64.b64encode(fp.read()).decode('ascii')
+            
+            fp.close()
+            return render_template('get_pair.html',user_image = data)
+        else:
+            flash('Inserted Into Memory Cache','msg')
+            return render_template('get_pair.html',user_image = cache.get(key)[1])
 
 
 @app.route("/cache_config", methods=['GET'])
