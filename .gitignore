@@ -1,2 +1,4 @@
 dir_to_ignore/
 __pycache__/
+.env
+.gitignore
