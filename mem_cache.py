@@ -49,6 +49,7 @@ class Cache():
         self.__list_dict.clear()
         self.__size = 0.0
         self.__count = 0
+        return True
         
     def refresh_config(self):
         self.__replacement_policy = get_replace_policy()

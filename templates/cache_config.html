@@ -1,43 +1,75 @@
-{% extends 'layout.html' %}
+{% extends 'manager_layout.html' %}
 {% block title %} Add Pair {% endblock %}
-{% block head %}{{ super() }} {% endblock %}
+{% block head %} <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script> {{ super() }} {% endblock %}
 {% block content %}
 <div>
-    <form action="/cache_config" method="post" enctype="multipart/form-data">
+    <form action="/app_config" method="post" enctype="multipart/form-data">
         <div class="form-check">
             <h3> Replacment Policy</h3>
             {% for policy in data.policies %}
             <div class="form-check" style="margin-left: 30px;">
-                <input id="{{loop.index}}" name="policy" class="form-check-input" type="radio" value={{policy.id}}
+                <input id="{{policy.id}}" name="policy" class="form-check-input" type="radio" value={{policy.id}}
                  {% if policy.id == data.current_policy_id %} checked {% endif %}>
  
-                <label class="form-check-label" for="{{loop.index}}">
+                <label class="form-check-label" for="{{policy.id}}">
                     {{ policy.policy_name_view }}
                 </label>
             </div>
             {% endfor %}
-            <!-- <div class="form-check" style="margin-left: 30px;">
-                <input id="randomRadio" name="policy" class="form-check-input" type="radio" value="random" {% if data and data['policy'] == 'random' %} checked {% endif %}>
-                <label class="form-check-label" for="randomRadio">
-                    Random
+        </div>
+
+        <div class="form-check">
+            <h3> Memory Cache Pool Policy</h3>
+            {% for policy in data.cache_policies %}
+            <div class="form-check" style="margin-left: 30px;">
+                <input id="{{policy.id}}" name="mem_policy" class="form-check-input" type="radio" value={{policy.id}}
+                 {% if policy.id == data.current_memcache_policy_id %} checked {% endif %} onclick='show_element_hide_element("auto","manual")' >
+ 
+                <label class="form-check-label" for="{{policy.id}}">
+                    {{ policy.policy_name_view }}
                 </label>
             </div>
-            <div class="form-check" style="margin-left: 30px;">
-                <input id="lruRadio" name="policy" class="form-check-input" type="radio" value="lru" {% if data and data['policy'] == 'lru' %} checked {% endif %}>
-                <label class="form-check-label" for="lruRadio">
-                    Least Recently Used (LRU)
-                </label>
-            </div> -->
+            {% endfor %}
         </div>
-        <div>
+
+        <div id="manual" {% if data.current_memcache_policy_id != 3 %} style="display: none" {%endif%}>
             <table style="margin-top: 50px; margin-left:30px">
                 <tr>
                     <td><label style="font-size: 20px;">Max Capacity(MB): </label></td>
                     <td> <input step="any" value="{{ data['capacity'] }}" type="number" name="capacity" class="form-control" style="margin-left:10px;"
-                            placeholder="capacity"> </td>
+                            placeholder="capacity" min="1" max="8"> </td>
                 </tr>
             </table>
         </div>
+        <div id="auto" {% if data.current_memcache_policy_id != 4 %} style="display: none" {%endif%}>
+            <table style="margin-top: 50px; margin-left:30px">
+                <tr>
+                    <div id="auto">
+                        <tr>
+                            <td><label style="font-size: 20px;">Max Miss Rate threshold: </label></td>
+                            <td> <input step="any" value="{{ data['max_miss_rate_threshold'] }}" type="number" name="max_miss_rate_threshold" class="form-control" style="margin-left:10px;"
+                                    placeholder="capacity"> </td>    
+                        </tr>
+                        <tr>
+                            <td><label style="font-size: 20px;">Min Miss Rate threshold: </label></td>
+                            <td> <input step="any" value="{{ data['min_miss_rate_threshold'] }}" type="number" name="min_miss_rate_threshold" class="form-control" style="margin-left:10px;"
+                                    placeholder="capacity"> </td>    
+                        </tr>
+                        <tr>
+                            <td><label style="font-size: 20px;">Ratio by which to expand the pool: </label></td>
+                            <td> <input step="any" value="{{ data['expansion_pool_ratio'] }}" type="number" name="expansion_pool_ratio" class="form-control" style="margin-left:10px;"
+                                    placeholder="capacity"> </td>    
+                        </tr>
+                        <tr>
+                            <td><label style="font-size: 20px;">Ratio by which to shrink the pool: </label></td>
+                            <td> <input step="any" value="{{ data['shrinksion_pool_ratio'] }}" type="number" name="shrinksion_pool_ratio" class="form-control" style="margin-left:10px;"
+                                    placeholder="capacity"> </td>    
+                        </tr>
+                    </div>
+                </tr>
+            </table>
+        </div>
+
         <button style="margin-top:30px; margin-left:30px" type="submit" class="btn btn-primary">Submit</button>
     </form>
 
@@ -63,7 +95,15 @@
                     </td>
                 </form>
             </tr>
-            
+            <tr>
+                <td><label style="font-size: 20px;">Clear App Data: </label></td>
+                <td>
+                    <form action="/clear_app_data" method="get" enctype="multipart/form-data">
+                        <button style="margin-left: 10px;" name="clear_app_data" value="true" type="submit"
+                            class="btn btn-primary">Clear App Data</button>
+                    </form>
+                </td>
+            </tr>
             <tr>
                 <td><label style="font-size: 20px;">Clear Memory Cache: </label></td>
                 <td>
@@ -75,6 +115,9 @@
             </tr>
 
         </table>
+
+        <div id="chart">
+        </div>
     </div>
 
 
@@ -95,5 +138,55 @@
     {% endif %}
     {% endwith %}
 </div>
+<script>
+    var to_thirty = []
+    for(let i = 1; i <= 30; i++) to_thirty.push(i+'');
+    var options = {
+        series: [{
+          name: "#1",
+          data: {{data.random1}}
+      },{
+        name: "#2",
+        data: {{data.random2}}
+    },{
+        name: "#3",
+        data: {{data.random3}}
+    },{
+        name: "#4",
+        data: {{data.random4}}
+    },{
+        name: "#5",
+        data: {{data.random5}}
+    }],
+        chart: {
+        height: 350,
+        type: 'line',
+        zoom: {
+          enabled: false
+        }
+      },
+      dataLabels: {
+        enabled: false
+      },
+      stroke: {
+        curve: 'straight'
+      },
+      title: {
+        text: 'Product Trends by Month',
+        align: 'left'
+      },
+      grid: {
+        row: {
+          colors: ['#f3f3f3', 'transparent'], // takes an array which will be repeated on columns
+          opacity: 0.5
+        },
+      },
+      xaxis: {
+        categories: [],
+      }
+      };
 
+      var chart = new ApexCharts(document.querySelector("#chart"), options);
+      chart.render();
+</script>
 {% endblock %}

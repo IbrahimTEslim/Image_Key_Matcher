@@ -87,10 +87,10 @@ def get_capacity() -> float:
     conn.close()
     return capacity[0]['capacity']
 
-def save_mem_config(policy_id: int, capacity: float) -> bool:
+def save_mem_config(policy_id: int, memcache_pool_policy: int, capacity: float) -> bool:
     try:
         conn, cur = get_db_connection_and_cursor()
-        cur.execute('update mem_cache set replace_policy = %s, capacity = %s where id = %s',(policy_id,capacity,1))
+        cur.execute('update mem_cache set replace_policy = %s,memcache_pool_policy = %s, capacity = %s where id = %s',(policy_id, memcache_pool_policy, capacity,1))
         conn.commit()
         conn.close()
         return True
@@ -128,6 +128,15 @@ def get_replace_policy_id() -> int:
     print("How Postgres Lig Return Data: ", replace_policy)
     conn.close()
     return replace_policy[0]['replace_policy']
+
+def get_memcache_pool_policy_id() -> int:
+    conn, cur = get_db_connection_and_cursor()
+    # cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+    cur.execute('select memcache_pool_policy from mem_cache')
+    replace_policy = cur.fetchall()
+    print("How Postgres Lig Return Data: ", replace_policy)
+    conn.close()
+    return replace_policy[0]['memcache_pool_policy']
 
 def get_replace_policy_by_id(id: int) -> str:
     id = get_replace_policy_id()
@@ -215,15 +224,15 @@ def insert_stat(served_req: int, hit: int, miss: int) -> bool:
         return True
     except: return False
 
-def get_policies() -> list:
+def get_policies(policy_for: int = 1) -> list:
     conn, cur = get_db_connection_and_cursor()
-    cur.execute('select id, policy_name, policy_name_view from policies order by id')
+    cur.execute(f'select id, policy_name, policy_name_view from policies where policy_for = {policy_for} order by id')
     policies = cur.fetchall()
     conn.close()
     return list(policies)
 
 def get_cache_config() -> dict:
-    return {'capacity' : get_capacity(), 'current_policy_id' : get_replace_policy_id(), 'policies' : get_policies()}
+    return {'capacity' : get_capacity(), 'current_policy_id' : get_replace_policy_id(), 'current_memcache_policy_id' : get_memcache_pool_policy_id(), 'policies' : get_policies(), 'cache_policies': get_policies(2)}
 
 def get_last_10_min_stat():
     conn, cur = get_db_connection_and_cursor()
@@ -239,3 +248,17 @@ def calc_statistics(stat_list: list) -> tuple:
         hit += record['hit']
         miss += record['miss']
     return served_req, hit, miss
+
+
+def truncate_table(table_name: str) -> bool:
+    try:
+        conn, cur = get_db_connection_and_cursor()
+        cur.execute("TRUNCATE TABLE %s",table_name)
+        cur.close()
+        conn.close()
+        return True
+    except: return False
+    
+def delete_images_data() -> bool:
+    return truncate_table('pairs') and truncate_table('statisics')
+    

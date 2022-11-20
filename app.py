@@ -145,48 +145,48 @@ def get_pair_post():
             return render_template('get_pair.html',user_image = cache.get(key)[1])
 
 
-@app.route("/cache_config", methods=['GET'])
-def cache_config_get():
-    # print("Policies: ", get_policies())
-    data = get_cache_config()
-    return render_template('cache_config.html', data = data)
+# @app.route("/cache_config", methods=['GET'])
+# def cache_config_get():
+#     # print("Policies: ", get_policies())
+#     data = get_cache_config()
+#     return render_template('cache_config.html', data = data)
 
 
-@app.route("/cache_config", methods=['POST'])
-def cache_config_post():
-    data = get_cache_config()
-    if 'policy' not in request.form:
-        flash('No Policy Added','error')
-        return render_template('cache_config.html', data = data)
+# @app.route("/cache_config", methods=['POST'])
+# def cache_config_post():
+#     data = get_cache_config()
+#     if 'policy' not in request.form:
+#         flash('No Policy Added','error')
+#         return render_template('cache_config.html', data = data)
 
-    if 'capacity' not in request.form: capacity = get_capacity()
-    else: capacity = request.form['capacity']
+#     if 'capacity' not in request.form: capacity = get_capacity()
+#     else: capacity = request.form['capacity']
 
-    policy = request.form['policy']
+#     policy = request.form['policy']
 
-    if save_mem_config(policy,capacity): flash("Settings Saved",'msg')
-    else: flash("Could not save setting.",'error')
+#     if save_mem_config(policy,capacity): flash("Settings Saved",'msg')
+#     else: flash("Could not save setting.",'error')
 
-    cache.refresh_config()
-    flash("Cache Refreshed",'msg')
+#     cache.refresh_config()
+#     flash("Cache Refreshed",'msg')
 
-    data['capacity'] = capacity
-    data['current_policy_id'] = int(policy)
-    # print("Data: ",data)
-    return render_template('cache_config.html', data = data)
+#     data['capacity'] = capacity
+#     data['current_policy_id'] = int(policy)
+#     # print("Data: ",data)
+#     return render_template('cache_config.html', data = data)
 
-@app.route("/statictics", methods=['GET'])
-def statistics_get():
-    data = {}
-    log = get_last_10_min_stat()
-    calculated_stat = calc_statistics(get_last_10_min_stat()) # tuple(requests, hit, miss)
-    requests = calculated_stat[0]
-    data['served_requests'] = requests
-    data['hit_rate'] = float(calculated_stat[1] / requests * 100) if requests > 0 else 0
-    data['miss_rate'] = float(calculated_stat[2] / requests * 100) if requests > 0 else 0
-    data['log'] = log
+# @app.route("/statictics", methods=['GET'])
+# def statistics_get():
+#     data = {}
+#     log = get_last_10_min_stat()
+#     calculated_stat = calc_statistics(get_last_10_min_stat()) # tuple(requests, hit, miss)
+#     requests = calculated_stat[0]
+#     data['served_requests'] = requests
+#     data['hit_rate'] = float(calculated_stat[1] / requests * 100) if requests > 0 else 0
+#     data['miss_rate'] = float(calculated_stat[2] / requests * 100) if requests > 0 else 0
+#     data['log'] = log
 
-    return render_template('statistics.html', data=data)
+#     return render_template('statistics.html', data=data)
 
 @app.route("/clear_cache", methods=['GET'])
 def clear_cache(): 
@@ -195,61 +195,79 @@ def clear_cache():
     flash('Cache Cleared Successfully.', 'msg')
     return render_template('cache_config.html',data = data)
 
-@app.route("/invalidate_key", methods=["POST"])
-def invalidate_key():
-    data = get_cache_config()
-    if 'key' not in request.form:
-        flash('No Key Added','error')
-        return render_template('cache_config.html', data = data)
-    # print("--------------degub Lineee----------------")
+# @app.route("/invalidate_key", methods=["POST"])
+# def invalidate_key():
+#     data = get_cache_config()
+#     if 'key' not in request.form:
+#         flash('No Key Added','error')
+#         return render_template('cache_config.html', data = data)
+#     # print("--------------degub Lineee----------------")
 
-    key = request.form['key']
+#     key = request.form['key']
 
-    if key == '':
-        flash('No Key Added', 'error')
-        return render_template('cache_config.html', data = data)
+#     if key == '':
+#         flash('No Key Added', 'error')
+#         return render_template('cache_config.html', data = data)
 
-    if not key_exist(key):
-        flash('Unexisted Key','error')
-        return render_template('cache_config.html', data = data)
+#     if not key_exist(key):
+#         flash('Unexisted Key','error')
+#         return render_template('cache_config.html', data = data)
 
-    cache.invalidate_key(key)
-    flash('Key Invalidated Successfully', 'msg')
-    return render_template('cache_config.html', data = data)
+#     cache.invalidate_key(key)
+#     flash('Key Invalidated Successfully', 'msg')
+#     return render_template('cache_config.html', data = data)
 
 
-@app.route("/put_key", methods=["POST"])
-def insert_into_cache():
-    data = get_cache_config()
-    if 'key' not in request.form:
-        flash('No Key Added','error')
-        return render_template('cache_config.html', data = data)
+# @app.route("/put_key", methods=["POST"])
+# def insert_into_cache():
+#     data = get_cache_config()
+#     if 'key' not in request.form:
+#         flash('No Key Added','error')
+#         return render_template('cache_config.html', data = data)
         
-    key = request.form['key']
+#     key = request.form['key']
 
-    if key == '':
-        flash('No Key Added', 'error')
-        return render_template('cache_config.html', data = data)
+#     if key == '':
+#         flash('No Key Added', 'error')
+#         return render_template('cache_config.html', data = data)
     
-    if not key_exist(key):
-        flash('Not Used Key', 'error')
-        return render_template('cache_config.html', data = data)
+#     if not key_exist(key):
+#         flash('Not Used Key', 'error')
+#         return render_template('cache_config.html', data = data)
     
+#     path = get_path(key)
+#     size = float(get_size(key))
+
+#     cache.invalidate_key(key)
+    
+#     saved = cache.put(key,path,size)
+    
+#     if not saved:
+#         flash('Image Size > Cache Cpacity, Can not Save', 'error')
+#         return render_template('cache_config.html', data = data)
+    
+#     flash('Element Inserted Into Memory Cache Successfully', 'msg')
+#     return render_template('cache_config.html', data = data)
+
+def clear_app_cache():
+    print("Cleared!!!!!!!!")
+    print("Before", cache.get_cache())
+    cache.clear()
+    print("After: ", cache.get_cache())
+
+def invalidate_key_in_app_cache(key):
+    cache.invalidate_key(key)
+
+def put_key_in_app_cache(key):
     path = get_path(key)
     size = float(get_size(key))
 
     cache.invalidate_key(key)
     
-    saved = cache.put(key,path,size)
-    
-    if not saved:
-        flash('Image Size > Cache Cpacity, Can not Save', 'error')
-        return render_template('cache_config.html', data = data)
-    
-    flash('Element Inserted Into Memory Cache Successfully', 'msg')
-    return render_template('cache_config.html', data = data)
+    return cache.put(key,path,size)
 
-
+def refresh_app_cache_config():
+    cache.refresh_config()
 
 
 if __name__ == "__main__":
