@@ -1,5 +1,7 @@
 import boto3
 from decouple import config
+import traceback
+
 
 class S3():
     def __init__(self):
@@ -23,3 +25,10 @@ class S3():
             return True
         except: return False
     
+    def clear_bucket(self) -> bool:
+        try:
+            self.__bucket.objects.all().delete()
+            return True
+        except Exception:
+            print(traceback.format_exc())
+            return False

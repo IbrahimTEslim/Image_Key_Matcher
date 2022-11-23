@@ -1,5 +1,5 @@
 {% extends 'manager_layout.html' %}
-{% block title %} Add Pair {% endblock %}
+{% block title %} App Config {% endblock %}
 {% block head %} <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script> {{ super() }} {% endblock %}
 {% block content %}
 <div>
@@ -36,8 +36,10 @@
             <table style="margin-top: 50px; margin-left:30px">
                 <tr>
                     <td><label style="font-size: 20px;">Max Capacity(MB): </label></td>
+                    <td> <button  id="decrease" onclick="decreaseValue()" >-</button> </td>
                     <td> <input step="any" value="{{ data['capacity'] }}" type="number" name="capacity" class="form-control" style="margin-left:10px;"
-                            placeholder="capacity" min="1" max="8"> </td>
+                            placeholder="capacity" min="1" max="8" readonly id="cache_capcity"> </td>
+                    <td> <button  id="increase" onclick="increaseValue()" >+</button> </td>        
                 </tr>
             </table>
         </div>

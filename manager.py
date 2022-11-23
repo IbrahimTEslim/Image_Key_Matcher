@@ -1,20 +1,25 @@
 import os
 from random import randint
-from flask import Flask, render_template, flash, request
-from app import clear_app_cache, invalidate_key_in_app_cache, put_key_in_app_cache, refresh_app_cache_config
-from lib import calc_statistics, delete_images_data, get_cache_config, get_capacity, get_last_10_min_stat, get_path, key_exist, save_mem_config
+from flask import Flask, redirect, render_template, flash, request
+# from app import clear_app_cache, invalidate_key_in_app_cache, put_key_in_app_cache, refresh_app_cache_config
+from app import *
+from lib import calc_statistics, delete_images_data, get_cache_config, get_capacity, get_last_10_min_stat, get_path, get_size, key_exist, save_mem_config
 
 
-app = Flask(__name__)
+flask_app = Flask(__name__)
 
 UPLOAD_FOLDER = './static/uploads'
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config.update(SECRET_KEY=os.urandom(24))
+flask_app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+flask_app.config['SESSION_TYPE'] = 'filesystem'
+flask_app.config.update(SECRET_KEY=os.urandom(24))
 
 
-@app.route("/app_config", methods=['GET'])
+@flask_app.route("/")
+def index():
+    return redirect('/app_config',code=302)
+
+@flask_app.route("/app_config", methods=['GET'])
 def cache_config_get():
     # print("Policies: ", get_policies())
     data = get_cache_config()
@@ -26,7 +31,7 @@ def cache_config_get():
     return render_template('cache_config.html', data = data)
 
 
-@app.route("/app_config", methods=['POST'])
+@flask_app.route("/app_config", methods=['POST'])
 def cache_config_post():
     data = get_cache_config()
     if 'policy' not in request.form:
@@ -51,7 +56,7 @@ def cache_config_post():
     # print("Data: ",data)
     return render_template('cache_config.html', data = data)
 
-@app.route("/statictics", methods=['GET'])
+@flask_app.route("/statictics", methods=['GET'])
 def statistics_get():
     data = {}
     log = get_last_10_min_stat()
@@ -64,14 +69,15 @@ def statistics_get():
 
     return render_template('statistics.html', data=data)
 
-@app.route("/clear_cache", methods=['GET'])
+@flask_app.route("/clear_cache", methods=['GET'])
 def clear_cache(): 
     data = get_cache_config()
-    clear_app_cache()
+    # app.clear_app_cache()
+    cache.clear()
     flash('Cache Cleared Successfully.', 'msg')
     return render_template('cache_config.html',data = data)
 
-@app.route("/clear_app_data", methods=['GET'])
+@flask_app.route("/clear_app_data", methods=['GET'])
 def clear_app_data(): 
     data = get_cache_config()
     clear_app_cache()
@@ -83,7 +89,7 @@ def clear_app_data():
     return render_template('cache_config.html',data = data)
 
 
-@app.route("/invalidate_key", methods=["POST"])
+@flask_app.route("/invalidate_key", methods=["POST"])
 def invalidate_key():
     data = get_cache_config()
     if 'key' not in request.form:
@@ -106,7 +112,7 @@ def invalidate_key():
     return render_template('cache_config.html', data = data)
 
 
-@app.route("/put_key", methods=["POST"])
+@flask_app.route("/put_key", methods=["POST"])
 def insert_into_cache():
     data = get_cache_config()
     if 'key' not in request.form:
@@ -123,7 +129,11 @@ def insert_into_cache():
         flash('Not Used Key', 'error')
         return render_template('cache_config.html', data = data)
     
-    saved = put_key_in_app_cache(key)
+    path = get_path(key)
+    size = float(get_size(key))
+    cache.invalidate_key(key)
+    
+    saved = cache.put(key,path,size)
     
     if not saved:
         flash('Image Size > Cache Cpacity, Can not Save', 'error')
@@ -135,4 +145,4 @@ def insert_into_cache():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port='9999', debug=True)
+    flask_app.run(host='0.0.0.0', port='9999', debug=True)

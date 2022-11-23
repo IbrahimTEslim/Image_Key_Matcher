@@ -10,3 +10,16 @@ function show_element_hide_element(show_dev, hide_dev) {
     }
 }
 
+function increaseValue() {
+    var value = parseInt(document.getElementById('cache_capcity').value, 10);
+    value = isNaN(value) || value > 8 ? 8 : value;
+    if(!(value >= 8)) value++;
+    document.getElementById('cache_capcity').value = value;
+  }
+  
+  function decreaseValue() {
+    var value = parseInt(document.getElementById('cache_capcity').value, 10);
+    value = isNaN(value) || value < 1 ? 1 : value;
+    if(!(value <= 1)) value--;
+    document.getElementById('cache_capcity').value = value;
+  }

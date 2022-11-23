@@ -3,9 +3,9 @@ from datetime import datetime
 from lib import get_capacity, get_path, get_replace_policy, get_size, insert_stat, set_hit_or_miss_value, set_mem_size, set_num_of_items, set_served_request_value
 import threading,base64, tempfile
 from Custom_DS import ListDict
-from s3 import S3
+from AWS.s3 import S3
 class Cache():
-    def __init__(self) -> None:
+    def __init__(self, saving_stat = True) -> None:
         self.__cache = OrderedDict()
         self.__list_dict = ListDict() # to apply random remove in O(1)
         self.__size = 0.0 # In MB unit
@@ -16,7 +16,7 @@ class Cache():
         self.__replacement_policy = get_replace_policy()
         self.__capacity = get_capacity() # In MB unit
         self.__s3 = S3()
-        threading.Timer(5,self.store_statistics).start()
+        if saving_stat: threading.Timer(5,self.store_statistics).start()
     
     def put(self, key: str, path = None, size = None, miss = False, image = None) -> bool:
         if not path: path = get_path(key)

@@ -1,6 +1,7 @@
 import psycopg2
 import psycopg2.extras
 from decouple import config
+import traceback
 
 def make_dicts(cursor, row):
     return dict((cursor.description[idx][0], value)
@@ -22,6 +23,7 @@ def get_db_connection_and_cursor():
 
     # conn.row_factory = make_dicts
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    conn.autocommit = True
     return conn, cursor
 
 def get_keys():
@@ -253,12 +255,14 @@ def calc_statistics(stat_list: list) -> tuple:
 def truncate_table(table_name: str) -> bool:
     try:
         conn, cur = get_db_connection_and_cursor()
-        cur.execute("TRUNCATE TABLE %s",table_name)
+        cur.execute(f"TRUNCATE TABLE {table_name};")
         cur.close()
         conn.close()
         return True
-    except: return False
+    except Exception:
+        print(traceback.format_exc())
+        return False
     
 def delete_images_data() -> bool:
-    return truncate_table('pairs') and truncate_table('statisics')
+    return truncate_table('pairs') and truncate_table('statistics')
     
